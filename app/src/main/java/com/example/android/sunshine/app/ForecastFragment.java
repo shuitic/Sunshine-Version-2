@@ -1,5 +1,6 @@
 package com.example.android.sunshine.app;
 
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -7,6 +8,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
@@ -46,6 +48,16 @@ public class ForecastFragment extends Fragment {
     }
 
     @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.action_refresh) {
+            FetchWeatherTask fetchWeatherTask = new FetchWeatherTask();
+            fetchWeatherTask.execute("94043");
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
@@ -73,10 +85,34 @@ public class ForecastFragment extends Fragment {
 
 
 
-    public class FetchWeatherTask extends AsyncTask<Void, Void, String> {
+    public class FetchWeatherTask extends AsyncTask<String, Void, String> {
         private final String TAG = "FetchWeatherTask";
         @Override
-        protected String doInBackground(Void... prams) {
+        protected String doInBackground(String... postCode) {
+            if (postCode.length == 0 || postCode[0] == null) {
+                return null;
+            }
+            Uri.Builder urlBuilder = new Uri.Builder();
+            urlBuilder.scheme("http");
+            urlBuilder.authority("api.openweathermap.org");
+            urlBuilder.appendPath("/data/2.5/forecast/daily");
+            String MODE = "mode";
+            String MODE_VALUE = "json";
+            String UNITS = "units";
+            String UNITS_VALUE = "metric";
+            String CNT = "cnt";
+            String CNT_VALUE = "7";
+            String Q = "q";
+            String APPID = "APPID";
+            String APPID_VALUE = "b06c2bd7516a2ee82bbc38d6a7fb3f35";
+
+            urlBuilder.appendQueryParameter(MODE, MODE_VALUE);
+            urlBuilder.appendQueryParameter(UNITS, UNITS_VALUE);
+            urlBuilder.appendQueryParameter(CNT, CNT_VALUE);
+            urlBuilder.appendQueryParameter(Q, postCode[0]);
+            urlBuilder.appendQueryParameter(APPID, APPID_VALUE);
+
+            Log.i(TAG, urlBuilder.toString());
             // These two need to be declared outside the try/catch
             // so that they can be closed in the finally block.
             HttpURLConnection urlConnection = null;
@@ -88,7 +124,8 @@ public class ForecastFragment extends Fragment {
                 // Construct the URL for the OpenWeatherMap query
                 // Possible parameters are available at OWM's forecast API page, at
                 // http://openweathermap.org/API#forecast
-                URL url = new URL("http://api.openweathermap.org/data/2.5/forecast/daily?q=94043&mode=json&units=metric&cnt=7&APPID=b06c2bd7516a2ee82bbc38d6a7fb3f35");
+
+                URL url = new URL(urlBuilder.toString());
 
                 // Create the request to OpenWeatherMap, and open the connection
                 urlConnection = (HttpURLConnection) url.openConnection();
@@ -117,6 +154,7 @@ public class ForecastFragment extends Fragment {
                     forecastJsonStr = null;
                 }
                 forecastJsonStr = buffer.toString();
+                Log.i(TAG, forecastJsonStr);
             } catch (IOException e) {
                 Log.e(TAG, "Error ", e);
                 // If the code didn't successfully get the weather data, there's no point in attempting
