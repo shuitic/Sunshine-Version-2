@@ -9,4 +9,11 @@
     tools:context="com.example.android.sunshine.app.DetailActivityFragment">
 
 
+    <TextView
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="New Text"
+        android:id="@+id/detailText"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true" />
 </RelativeLayout>
