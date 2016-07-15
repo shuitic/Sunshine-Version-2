@@ -47,6 +47,12 @@ public class ForecastFragment extends Fragment {
     }
 
     @Override
+    public void onStart() {
+        super.onStart();
+        updateWeather();
+    }
+
+    @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         this.setHasOptionsMenu(true);
@@ -61,10 +67,7 @@ public class ForecastFragment extends Fragment {
     public boolean onOptionsItemSelected(MenuItem item) {
         int itemId = item.getItemId();
         if (itemId == R.id.action_refresh) {
-            FetchWeatherTask fetchWeatherTask = new FetchWeatherTask();
-            SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this.getActivity());
-            String location = preferences.getString(getString(R.string.pref_location_key), getString(R.string.pref_location_default));
-            fetchWeatherTask.execute(location);
+            updateWeather();
             return true;
         } else if (itemId == R.id.action_settings) {
             Intent detailIntent = new Intent(getActivity(),SettingsActivity.class);
@@ -79,22 +82,11 @@ public class ForecastFragment extends Fragment {
                              Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
 
-        String[] forecastArray = {
-                "Today - Sunny - 88/63",
-                "Tomorrow - Foggy - 78/48",
-                "Weds - Cloudy - 72/63",
-                "Thurs - Asteroids - 75/65",
-                "Fri - Heavy Rain - 65/56",
-                "Sat - HELP TRAPPED IN WEATHERSTATION - 60/51",
-                "Sun - Sunny - 88/68"
-        };
-
-        List<String> weekForecast = new ArrayList<>(Arrays.asList(forecastArray));
         mForcastAdapter = new ArrayAdapter<String>(
                 this.getActivity(),
                 R.layout.list_item_forecast,
                 R.id.list_item_forecast_textview,
-                weekForecast);
+                new ArrayList<String>());
         ListView forecastListView = (ListView)rootView.findViewById(R.id.listview_forecast);
         forecastListView.setAdapter(mForcastAdapter);
         forecastListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -110,13 +102,21 @@ public class ForecastFragment extends Fragment {
         return rootView;
     }
 
+    private void updateWeather() {
+        FetchWeatherTask fetchWeatherTask = new FetchWeatherTask();
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this.getActivity());
+        String location = preferences.getString(getString(R.string.pref_location_key), getString(R.string.pref_location_default));
+        String unit = preferences.getString(getString(R.string.pref_unit_key), getString(R.string.pref_unit_default));
+        fetchWeatherTask.execute(location, unit);
+    }
+
 
 
     public class FetchWeatherTask extends AsyncTask<String, Void, String[]> {
         private final String LOG_TAG = "FetchWeatherTask";
         @Override
         protected String[] doInBackground(String... postCode) {
-            if (postCode.length == 0 || postCode[0] == null) {
+            if (postCode.length < 2 || postCode[0] == null || postCode[1] == null) {
                 return null;
             }
             Uri.Builder urlBuilder = new Uri.Builder();
@@ -126,7 +126,6 @@ public class ForecastFragment extends Fragment {
             String MODE = "mode";
             String MODE_VALUE = "json";
             String UNITS = "units";
-            String UNITS_VALUE = "metric";
             String CNT = "cnt";
             int CNT_VALUE = 7;
             String Q = "q";
@@ -134,7 +133,7 @@ public class ForecastFragment extends Fragment {
             String APPID_VALUE = "b06c2bd7516a2ee82bbc38d6a7fb3f35";
 
             urlBuilder.appendQueryParameter(MODE, MODE_VALUE);
-            urlBuilder.appendQueryParameter(UNITS, UNITS_VALUE);
+            urlBuilder.appendQueryParameter(UNITS, postCode[1]);
             urlBuilder.appendQueryParameter(CNT, Integer.toString(CNT_VALUE));
             urlBuilder.appendQueryParameter(Q, postCode[0]);
             urlBuilder.appendQueryParameter(APPID, APPID_VALUE);
