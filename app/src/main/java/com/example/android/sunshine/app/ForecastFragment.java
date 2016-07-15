@@ -69,11 +69,14 @@ public class ForecastFragment extends Fragment {
         if (itemId == R.id.action_refresh) {
             updateWeather();
             return true;
-        } else if (itemId == R.id.action_settings) {
+        }
+/*
+        else if (itemId == R.id.action_settings) {
             Intent detailIntent = new Intent(getActivity(),SettingsActivity.class);
             startActivity(detailIntent);
             return true;
         }
+*/
         return super.onOptionsItemSelected(item);
     }
 
